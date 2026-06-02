@@ -150,7 +150,7 @@ export default function App() {
 
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const ios = /iphone|ipad|ipod/.test(userAgent);
+    const ios = /iphone|ipad|ipod/.test(userAgent) || (window.navigator.platform?.includes("MacIntel") && window.navigator.maxTouchPoints > 1);
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     setIsIos(ios);
     setIsStandalone(standalone);
@@ -181,7 +181,9 @@ export default function App() {
     }
     if (isIos && !isStandalone) {
       setShowIosInstallHint(true);
+      return;
     }
+    alert("Install is not available right now. Please open this site in a supported browser or use Add to Home Screen on iOS.");
   };
 
   const tracker = trackers[activeTracker] || trackers[0];
@@ -237,7 +239,7 @@ export default function App() {
   const totalCt = (tracker?.sections||[]).flatMap(s=>s.items).length;
 
   return (
-    <div style={{minHeight:"100vh",background:"#12121c",fontFamily:"'DM Mono','Fira Code','Courier New',monospace",color:"#e8e8e8",paddingBottom:"110px",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:"#12121c",fontFamily:"'DM Mono','Fira Code','Courier New',monospace",color:"#e8e8e8",paddingTop:"24px",paddingBottom:"24px",position:"relative"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
@@ -300,7 +302,7 @@ export default function App() {
       {showInstallBanner && (
         <div style={{padding:"12px 16px",background:"rgba(59,130,246,0.12)",borderBottom:"1px solid rgba(59,130,246,0.18)",display:"flex",alignItems:"center",gap:10,justifyContent:"space-between"}}>
           <div style={{fontSize:12,color:"#e8f2ff",lineHeight:1.4}}>
-            Install Supertracker for faster access and offline use.
+            Install Pasko for faster access and offline use.
           </div>
           <button onClick={promptInstall} className="ctrl-btn" style={{padding:"7px 10px",fontSize:11,background:"#3b82f6",color:"#0a0a0f",borderColor:"transparent"}}>Install</button>
         </div>
@@ -308,7 +310,7 @@ export default function App() {
       {showIosInstallBanner && (
         <div style={{padding:"12px 16px",background:"rgba(255,255,255,0.08)",borderBottom:"1px solid rgba(255,255,255,0.14)",display:"flex",alignItems:"center",gap:10,justifyContent:"space-between"}}>
           <div style={{fontSize:12,color:"#f0f0f0",lineHeight:1.4}}>
-            Install Supertracker on iOS: tap Share → Add to Home Screen.
+            Install Pasko on iOS: tap Share → Add to Home Screen.
           </div>
           <button onClick={()=>setShowIosInstallHint(false)} className="ctrl-btn" style={{padding:"7px 10px",fontSize:11}}>Dismiss</button>
         </div>
@@ -499,14 +501,6 @@ export default function App() {
         )}
       </div>
 
-      <div style={{position:"fixed",left:0,right:0,bottom:0,zIndex:60,background:"#10101a",borderTop:"1px solid rgba(255,255,255,0.08)",padding:"10px 12px",display:"flex",gap:8,justifyContent:"space-between",alignItems:"center",boxShadow:"0 -10px 30px rgba(0,0,0,0.25)"}}>
-        {installAvailable && (
-          <button className="ctrl-btn" style={{flex:1,whiteSpace:"nowrap"}} onClick={promptInstall}>Install</button>
-        )}
-        <button className="ctrl-btn" style={{flex:1,whiteSpace:"nowrap"}} onClick={()=>{setModal("addSection");setForm({color:accent});}}>+ Section</button>
-        <button className="ctrl-btn" style={{flex:1,whiteSpace:"nowrap"}} onClick={()=>setShowNotes(s=>!s)}>{showNotes?"Hide Notes":"Notes"}</button>
-        <button className={`ctrl-btn ${editMode?"active-edit":""}`} style={{flex:1,whiteSpace:"nowrap"}} onClick={()=>setEditMode(e=>!e)}>{editMode?"✓ Done":"✏️ Edit"}</button>
-      </div>
     </div>
   );
 }

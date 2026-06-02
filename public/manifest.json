@@ -1,6 +1,6 @@
 {
-  "short_name": "Supertracker",
-  "name": "Supertracker",
+  "short_name": "Pasko",
+  "name": "Pasko",
   "description": "A personal productivity tracker for study, health, and habit goals.",
   "icons": [
     {
@@ -20,6 +20,12 @@
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
     }
   ],
   "start_url": "/",

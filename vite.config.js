@@ -9,9 +9,10 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "robots.txt"],
       manifest: {
-        name: "Supertracker",
-        short_name: "Supertracker",
+        name: "Pasko",
+        short_name: "Pasko",
         description: "A personal productivity tracker for study, health, and habit goals.",
         theme_color: "#12121c",
         background_color: "#12121c",
