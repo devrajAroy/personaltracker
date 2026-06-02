@@ -157,6 +157,7 @@ export default function App() {
   const [showIosInstallHint, setShowIosInstallHint] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [viewMode, setViewMode] = useState("dashboard");
   const [motivationQuote, setMotivationQuote] = useState(() =>
     MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]
   );
@@ -351,7 +352,7 @@ export default function App() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:12}}>
             <div>
               <div style={{fontSize:9,letterSpacing:"0.2em",color:"rgba(255,255,255,0.3)",marginBottom:5,textTransform:"uppercase"}}>Sep 2026 Prep</div>
-              <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:"-0.02em",color:"#fff",lineHeight:1}}>{tracker.name} Tracker</h1>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,letterSpacing:"-0.02em",color:"#fff",lineHeight:1}}>{viewMode === "dashboard" ? "Pasko Dashboard" : `${tracker.name} Tracker`}</h1>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:14}}>
               <ProgressRing pct={overall} color={accent} size={58} stroke={4}/>
@@ -373,78 +374,95 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:10,marginBottom:16}}>
-            {overviewCards.map(card => (
-              <div key={card.label} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
-                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)"}}>{card.label}</div>
-                <div style={{fontSize:18,fontWeight:700,color:"#fff",marginTop:6}}>{card.value}</div>
-                <div style={{height:3,borderRadius:999,background:card.accent,marginTop:8,opacity:0.9}}/>
-              </div>
-            ))}
-          </div>
-
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:10,marginBottom:16}}>
-            <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
-              <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Dashboard overview</div>
-              <div style={{fontSize:12,color:"#f4f4f5",lineHeight:1.5}}>Track your progress, review the latest insights, and keep your next milestone in sight from one place.</div>
-            </div>
-            <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)"}}>Notifications</div>
-                <button className="ctrl-btn" onClick={()=>setNotifications([])} style={{padding:"6px 8px",fontSize:10}}>Clear</button>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                {notifications.length===0 ? <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>No new notifications.</div> : notifications.map(item => (
-                  <button key={item.id} onClick={()=>setNotifications(p=>p.filter(n=>n.id!==item.id))} style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"9px 10px",color:"#f4f4f5",cursor:"pointer"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}>
-                      <strong style={{fontSize:11}}>{item.title}</strong>
-                      <span style={{fontSize:9,color:"rgba(255,255,255,0.45)"}}>{item.time}</span>
-                    </div>
-                    <div style={{fontSize:10,color:"rgba(255,255,255,0.72)",marginTop:4}}>{item.text}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Tracker tabs row */}
-          <div style={{display:"flex",gap:4,alignItems:"center",overflowX:"auto",paddingBottom:0}}>
-            <div style={{display:"flex",gap:3,flex:1,overflowX:"auto"}}>
-              {trackers.map((t,idx)=>(
-                <div key={t.id} style={{position:"relative",flexShrink:0}}>
-                  <button className={`tracker-tab ${idx===activeTracker?"active":""}`}
-                    style={{borderColor:idx===activeTracker?`${t.color}55`:"transparent",background:idx===activeTracker?`${t.color}14`:"none",color:idx===activeTracker?t.color:"#888"}}
-                    onClick={()=>{setActiveTracker(idx);setExpanded(null);setEditMode(false);}}>
-                    <span>{t.icon}</span>
-                    <span>{t.name}</span>
-                    {idx===activeTracker && <span style={{fontSize:9,color:t.color,opacity:0.7}}>{totalProg(t.sections)}%</span>}
-                  </button>
-                  {editMode && idx===activeTracker && trackers.length>1 && (
-                    <button onClick={()=>deleteTracker(idx)} className="del-x"
-                      style={{position:"absolute",top:-5,right:-5,background:"rgba(255,60,60,0.8)",color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer",padding:0}}>✕</button>
-                  )}
+          {viewMode === "trackers" && (
+            <>
+              <div style={{display:"flex",gap:4,alignItems:"center",overflowX:"auto",paddingBottom:0}}>
+                <div style={{display:"flex",gap:3,flex:1,overflowX:"auto"}}>
+                  {trackers.map((t,idx)=>(
+                    <div key={t.id} style={{position:"relative",flexShrink:0}}>
+                      <button className={`tracker-tab ${idx===activeTracker?"active":""}`}
+                        style={{borderColor:idx===activeTracker?`${t.color}55`:"transparent",background:idx===activeTracker?`${t.color}14`:"none",color:idx===activeTracker?t.color:"#888"}}
+                        onClick={()=>{setActiveTracker(idx);setExpanded(null);setEditMode(false);}}>
+                        <span>{t.icon}</span>
+                        <span>{t.name}</span>
+                        {idx===activeTracker && <span style={{fontSize:9,color:t.color,opacity:0.7}}>{totalProg(t.sections)}%</span>}
+                      </button>
+                      {editMode && idx===activeTracker && trackers.length>1 && (
+                        <button onClick={()=>deleteTracker(idx)} className="del-x"
+                          style={{position:"absolute",top:-5,right:-5,background:"rgba(255,60,60,0.8)",color:"#fff",borderRadius:"50%",width:16,height:16,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer",padding:0}}>✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <button className="tracker-tab" onClick={()=>{setModal("addTracker");setForm({color:PALETTE[0],icon:"🎯"});}}
+                    style={{color:"rgba(255,255,255,0.35)",fontSize:11}}>+ New</button>
                 </div>
-              ))}
-              <button className="tracker-tab" onClick={()=>{setModal("addTracker");setForm({color:PALETTE[0],icon:"🎯"});}}
-                style={{color:"rgba(255,255,255,0.35)",fontSize:11}}>+ New</button>
-            </div>
 
-            {/* Right controls */}
-            <div style={{display:"flex",gap:5,flexShrink:0,paddingLeft:8}}>
-              <button className={`ctrl-btn ${editMode?"active-edit":""}`} onClick={()=>setEditMode(e=>!e)}>
-                {editMode?"✓ Done":"✏️ Edit"}
-              </button>
-              <button className={`ctrl-btn ${showNotes?"active-edit":""}`} onClick={()=>setShowNotes(s=>!s)}>Notes</button>
-            </div>
-          </div>
+                {/* Right controls */}
+                <div style={{display:"flex",gap:5,flexShrink:0,paddingLeft:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                  <button className={`ctrl-btn ${viewMode === "dashboard" ? "active-edit" : ""}`} onClick={()=>{setViewMode("dashboard"); setExpanded(null);}}>
+                    Dashboard
+                  </button>
+                  <button className={`ctrl-btn ${viewMode === "trackers" ? "active-edit" : ""}`} onClick={()=>{setViewMode("trackers"); setExpanded(null);}}>
+                    Trackers
+                  </button>
+                  {viewMode === "trackers" && (
+                    <button className={`ctrl-btn ${editMode?"active-edit":""}`} onClick={()=>setEditMode(e=>!e)}>
+                      {editMode?"✓ Done":"✏️ Edit"}
+                    </button>
+                  )}
+                  <button className={`ctrl-btn ${showNotes?"active-edit":""}`} onClick={()=>setShowNotes(s=>!s)}>Notes</button>
+                </div>
+              </div>
 
-          {/* Active tracker underline */}
-          <div style={{height:2,background:`linear-gradient(90deg, ${accent}88, transparent)`,borderRadius:2,marginTop:0}}/>
+              {/* Active tracker underline */}
+              <div style={{height:2,background:`linear-gradient(90deg, ${accent}88, transparent)`,borderRadius:2,marginTop:0}}/>
+            </>
+          )}
         </div>
       </div>
 
       {/* BODY */}
       <div style={{maxWidth:800,margin:"0 auto",padding:"22px 24px"}}>
+        {viewMode === "dashboard" ? (
+          <>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:10,marginBottom:18}}>
+              <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Dashboard overview</div>
+                <div style={{fontSize:12,color:"#f4f4f5",lineHeight:1.55}}>Start here to review progress, open your tracker workspace, and stay focused on what matters next.</div>
+                <button className="ctrl-btn" onClick={()=>setViewMode("trackers")} style={{marginTop:10,padding:"8px 10px",fontSize:10,background:"rgba(129,199,132,0.12)",borderColor:"rgba(129,199,132,0.25)",color:"#b9f5bf"}}>Open trackers</button>
+              </div>
+              <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Notifications</div>
+                <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                  {notifications.length===0 ? <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>No new notifications.</div> : notifications.map(item => (
+                    <button key={item.id} onClick={()=>setNotifications(p=>p.filter(n=>n.id!==item.id))} style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"9px 10px",color:"#f4f4f5",cursor:"pointer"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}>
+                        <strong style={{fontSize:11}}>{item.title}</strong>
+                        <span style={{fontSize:9,color:"rgba(255,255,255,0.45)"}}>{item.time}</span>
+                      </div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.72)",marginTop:4}}>{item.text}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:10,marginBottom:18}}>
+              {overviewCards.map(card => (
+                <div key={card.label} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
+                  <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)"}}>{card.label}</div>
+                  <div style={{fontSize:18,fontWeight:700,color:"#fff",marginTop:6}}>{card.value}</div>
+                  <div style={{height:3,borderRadius:999,background:card.accent,marginTop:8,opacity:0.9}}/>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+              <button className="ctrl-btn" onClick={()=>setViewMode("dashboard")} style={{padding:"8px 10px",fontSize:10,background:"rgba(255,255,255,0.06)",borderColor:"rgba(255,255,255,0.12)"}}>← Back to dashboard</button>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.45)"}}>Trackers workspace</span>
+            </div>
 
         {/* Notes */}
         {showNotes && (
@@ -572,6 +590,8 @@ export default function App() {
               );
             })}
           </div>
+        )}
+          </>
         )}
       </div>
 
