@@ -3,6 +3,13 @@ import { useState, useEffect } from "react";
 const APP_KEY = "supertracker_v1";
 const NOTES_KEY = "supertracker_notes_v1";
 
+const MOTIVATION_QUOTES = [
+  { text: "Small steps every day turn big goals into real progress.", author: "Pasko" },
+  { text: "Consistency beats intensity when intensity fades.", author: "Pasko" },
+  { text: "What you repeat tomorrow starts with what you do today.", author: "Pasko" },
+  { text: "Progress is proof that your effort is working, even when it feels slow.", author: "Pasko" },
+];
+
 const PALETTE = ["#e8c547","#4fc3f7","#81c784","#f06292","#ce93d8","#ffab76","#51cf66","#74c0fc","#ffd43b","#ff6b6b","#a78bfa","#34d399","#fb8c00","#26c6da"];
 const ICONS = ["📚","💪","🏋️","🥗","🏃","🧠","💊","😴","🚴","🧘","🏊","⚽","🎯","🔥","💼","🎸","✈️","💰","🖥️","🎨","📝","🏆","🌱","⚡"];
 
@@ -144,6 +151,9 @@ export default function App() {
   const [showIosInstallHint, setShowIosInstallHint] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [motivationQuote, setMotivationQuote] = useState(() =>
+    MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]
+  );
 
   useEffect(() => { save(APP_KEY, trackers); }, [trackers]);
   useEffect(() => { save(NOTES_KEY, notes); }, [notes]);
@@ -151,7 +161,8 @@ export default function App() {
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     const ios = /iphone|ipad|ipod/.test(userAgent) || (window.navigator.platform?.includes("MacIntel") && window.navigator.maxTouchPoints > 1);
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const mediaQuery = typeof window.matchMedia === "function" ? window.matchMedia('(display-mode: standalone)') : null;
+    const standalone = Boolean(mediaQuery?.matches || window.navigator.standalone === true);
     setIsIos(ios);
     setIsStandalone(standalone);
 
@@ -171,6 +182,11 @@ export default function App() {
   const installAvailable = Boolean(deferredPrompt) || (isIos && !isStandalone);
   const showInstallBanner = Boolean(deferredPrompt && !isIos && !isStandalone);
   const showIosInstallBanner = isIos && !isStandalone && showIosInstallHint;
+
+  const pickQuote = () => {
+    const next = MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
+    setMotivationQuote(next);
+  };
 
   const promptInstall = async () => {
     if (deferredPrompt) {
@@ -329,6 +345,17 @@ export default function App() {
               <div>
                 <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:"0.12em",textTransform:"uppercase"}}>Progress</div>
                 <div style={{fontSize:11,color:"rgba(255,255,255,0.6)",marginTop:2}}>{doneCt} / {totalCt} done</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,marginBottom:12,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:260,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 14px"}}>
+              <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:6}}>Daily motivation</div>
+              <div style={{fontSize:12,color:"#f4f4f5",lineHeight:1.5}}>{motivationQuote.text}</div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:8}}>
+                <span style={{fontSize:10,color:"rgba(255,255,255,0.45)"}}>— {motivationQuote.author}</span>
+                <button className="ctrl-btn" onClick={pickQuote} style={{padding:"7px 10px",fontSize:10}}>New quote</button>
               </div>
             </div>
           </div>
