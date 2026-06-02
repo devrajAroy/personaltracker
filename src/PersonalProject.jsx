@@ -10,6 +10,12 @@ const MOTIVATION_QUOTES = [
   { text: "Progress is proof that your effort is working, even when it feels slow.", author: "Pasko" },
 ];
 
+const INITIAL_NOTIFICATIONS = [
+  { id: 1, title: "Daily focus", text: "You have 3 tasks left to finish your current streak.", time: "5m ago", tone: "info" },
+  { id: 2, title: "Habit reminder", text: "A 10-minute review session is due before dinner.", time: "30m ago", tone: "warning" },
+  { id: 3, title: "Goal update", text: "Your study tracker is 72% complete this week.", time: "1h ago", tone: "success" },
+];
+
 const PALETTE = ["#e8c547","#4fc3f7","#81c784","#f06292","#ce93d8","#ffab76","#51cf66","#74c0fc","#ffd43b","#ff6b6b","#a78bfa","#34d399","#fb8c00","#26c6da"];
 const ICONS = ["📚","💪","🏋️","🥗","🏃","🧠","💊","😴","🚴","🧘","🏊","⚽","🎯","🔥","💼","🎸","✈️","💰","🖥️","🎨","📝","🏆","🌱","⚡"];
 
@@ -154,6 +160,7 @@ export default function App() {
   const [motivationQuote, setMotivationQuote] = useState(() =>
     MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]
   );
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
 
   useEffect(() => { save(APP_KEY, trackers); }, [trackers]);
   useEffect(() => { save(NOTES_KEY, notes); }, [notes]);
@@ -253,6 +260,12 @@ export default function App() {
   const overall = totalProg(tracker?.sections||[]);
   const doneCt = (tracker?.sections||[]).flatMap(s=>s.items).filter(i=>i.done).length;
   const totalCt = (tracker?.sections||[]).flatMap(s=>s.items).length;
+  const overviewCards = [
+    { label: "Trackers", value: trackers.length, accent: accent },
+    { label: "Completed", value: doneCt, accent: "#81c784" },
+    { label: "Open tasks", value: Math.max(totalCt - doneCt, 0), accent: "#74c0fc" },
+    { label: "Completion", value: `${overall}%`, accent: accent },
+  ];
 
   return (
     <div style={{minHeight:"100vh",background:"#12121c",fontFamily:"'DM Mono','Fira Code','Courier New',monospace",color:"#e8e8e8",paddingTop:"24px",paddingBottom:"24px",position:"relative"}}>
@@ -356,6 +369,40 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginTop:8}}>
                 <span style={{fontSize:10,color:"rgba(255,255,255,0.45)"}}>— {motivationQuote.author}</span>
                 <button className="ctrl-btn" onClick={pickQuote} style={{padding:"7px 10px",fontSize:10}}>New quote</button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:10,marginBottom:16}}>
+            {overviewCards.map(card => (
+              <div key={card.label} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)"}}>{card.label}</div>
+                <div style={{fontSize:18,fontWeight:700,color:"#fff",marginTop:6}}>{card.value}</div>
+                <div style={{height:3,borderRadius:999,background:card.accent,marginTop:8,opacity:0.9}}/>
+              </div>
+            ))}
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:10,marginBottom:16}}>
+            <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
+              <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Dashboard overview</div>
+              <div style={{fontSize:12,color:"#f4f4f5",lineHeight:1.5}}>Track your progress, review the latest insights, and keep your next milestone in sight from one place.</div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 13px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)"}}>Notifications</div>
+                <button className="ctrl-btn" onClick={()=>setNotifications([])} style={{padding:"6px 8px",fontSize:10}}>Clear</button>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                {notifications.length===0 ? <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>No new notifications.</div> : notifications.map(item => (
+                  <button key={item.id} onClick={()=>setNotifications(p=>p.filter(n=>n.id!==item.id))} style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"9px 10px",color:"#f4f4f5",cursor:"pointer"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center"}}>
+                      <strong style={{fontSize:11}}>{item.title}</strong>
+                      <span style={{fontSize:9,color:"rgba(255,255,255,0.45)"}}>{item.time}</span>
+                    </div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,0.72)",marginTop:4}}>{item.text}</div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
