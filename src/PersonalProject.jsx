@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 const APP_KEY = "supertracker_v1";
 const NOTES_KEY = "supertracker_notes_v1";
+const HABITS_KEY = "supertracker_habits_v1";
 
 const MOTIVATION_QUOTES = [
   { text: "Small steps every day turn big goals into real progress.", author: "Pasko" },
@@ -14,6 +15,12 @@ const INITIAL_NOTIFICATIONS = [
   { id: 1, title: "Daily focus", text: "You have 3 tasks left to finish your current streak.", time: "5m ago", tone: "info" },
   { id: 2, title: "Habit reminder", text: "A 10-minute review session is due before dinner.", time: "30m ago", tone: "warning" },
   { id: 3, title: "Goal update", text: "Your study tracker is 72% complete this week.", time: "1h ago", tone: "success" },
+];
+
+const INITIAL_HABITS = [
+  { id: 1, name: "Morning planning", done: 4, target: 5, streak: 9 },
+  { id: 2, name: "Hydration check", done: 3, target: 4, streak: 6 },
+  { id: 3, name: "Evening review", done: 2, target: 3, streak: 7 },
 ];
 
 const PALETTE = ["#e8c547","#4fc3f7","#81c784","#f06292","#ce93d8","#ffab76","#51cf66","#74c0fc","#ffd43b","#ff6b6b","#a78bfa","#34d399","#fb8c00","#26c6da"];
@@ -93,11 +100,11 @@ function Modal({ title, accent, onClose, children }) {
   );
 }
 
-function FInput({ label, value, onChange, placeholder }) {
+function FInput({ label, value, onChange, placeholder, type = "text" }) {
   return (
     <div style={{marginBottom:14}}>
       {label && <div style={{fontSize:10,color:"#aaa",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6,fontFamily:"'DM Mono',monospace"}}>{label}</div>}
-      <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+      <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
         style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.14)",color:"#fff",padding:"10px 13px",borderRadius:7,fontFamily:"'DM Mono',monospace",fontSize:12,width:"100%",outline:"none",transition:"border-color 0.2s"}}
         onFocus={e=>e.target.style.borderColor="rgba(255,255,255,0.35)"}
         onBlur={e=>e.target.style.borderColor="rgba(255,255,255,0.14)"}/>
@@ -162,9 +169,11 @@ export default function App() {
     MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]
   );
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [habits, setHabits] = useState(() => load(HABITS_KEY, INITIAL_HABITS));
 
   useEffect(() => { save(APP_KEY, trackers); }, [trackers]);
   useEffect(() => { save(NOTES_KEY, notes); }, [notes]);
+  useEffect(() => { save(HABITS_KEY, habits); }, [habits]);
 
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -243,7 +252,7 @@ export default function App() {
   // item-level CRUD
   const addItem = () => {
     if (!form.name?.trim()) return;
-    const item = { id:uid(), name:form.name.trim(), done:false };
+    const item = { id:uid(), name:form.name.trim(), done:false, dueDate: form.dueDate || "" };
     setTrackers(p=>p.map((t,i)=> i===activeTracker ? {...t, sections:t.sections.map(s=> s.id===modalCtx.sectionId ? {...s, items:[...s.items, item]} : s)} : t));
     closeModal();
   };
@@ -257,6 +266,27 @@ export default function App() {
     setNotes(p=>[{id:Date.now(),text:noteText.trim(),date:new Date().toLocaleDateString(),tracker:tracker.name,color:accent},...p]);
     setNoteText("");
   };
+
+  const toggleHabit = (habitId) => {
+    setHabits(p => p.map(h => h.id === habitId ? { ...h, done: Math.min(h.done + 1, h.target) } : h));
+  };
+
+  const upcomingDeadlines = trackers
+    .flatMap((trackerItem) => trackerItem.sections.flatMap((section) =>
+      section.items
+        .filter((item) => item.dueDate)
+        .map((item) => {
+          const dayMs = 24 * 60 * 60 * 1000;
+          const diff = Math.max(0, Math.ceil((new Date(item.dueDate) - new Date()) / dayMs));
+          return { ...item, trackerName: trackerItem.name, sectionName: section.name, daysLeft: diff };
+        })
+    ))
+    .filter((item) => item.daysLeft <= 14)
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+  const consistencyScore = habits.length
+    ? Math.round((habits.reduce((sum, h) => sum + (h.done / h.target), 0) / habits.length) * 100)
+    : 0;
 
   const overall = totalProg(tracker?.sections||[]);
   const doneCt = (tracker?.sections||[]).flatMap(s=>s.items).filter(i=>i.done).length;
@@ -324,6 +354,7 @@ export default function App() {
       {modal === "addItem" && (
         <Modal title="New Item" accent={accent} onClose={closeModal}>
           <FInput label="Item Name" value={form.name||""} onChange={v=>setF("name",v)} placeholder="e.g. Read chapter 3..."/>
+          <FInput label="Due date" type="date" value={form.dueDate||""} onChange={v=>setF("dueDate",v)} placeholder="Select a deadline"/>
           <SubmitBtn onClick={addItem} color={accent}>Add Item</SubmitBtn>
         </Modal>
       )}
@@ -456,6 +487,51 @@ export default function App() {
                 </div>
               ))}
             </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:10,marginBottom:18}}>
+              <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Countdown deadlines</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {upcomingDeadlines.length === 0 ? (
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>No deadlines are coming up in the next 14 days.</div>
+                  ) : upcomingDeadlines.map(item => (
+                    <div key={`${item.trackerName}-${item.sectionName}-${item.id}`} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px 10px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:4}}>
+                        <strong style={{fontSize:11,color:"#f4f4f5"}}>{item.name}</strong>
+                        <span style={{fontSize:9,color:"#81c784"}}>{item.daysLeft} day{item.daysLeft === 1 ? "" : "s"} left</span>
+                      </div>
+                      <div style={{fontSize:10,color:"rgba(255,255,255,0.72)",marginBottom:4}}>{item.trackerName} • {item.sectionName}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.45)"}}>{new Date(item.dueDate).toLocaleDateString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
+                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Habit consistency</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:2}}>
+                    <strong style={{fontSize:11,color:"#f4f4f5"}}>Weekly consistency</strong>
+                    <span style={{fontSize:10,color:"#74c0fc"}}>{consistencyScore}%</span>
+                  </div>
+                  {habits.map(habit => {
+                    const pct = Math.min(100, Math.round((habit.done / habit.target) * 100));
+                    return (
+                      <button key={habit.id} onClick={() => toggleHabit(habit.id)} style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px 10px",cursor:"pointer",color:"#f4f4f5"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:4}}>
+                          <strong style={{fontSize:11}}>{habit.name}</strong>
+                          <span style={{fontSize:9,color:"#ffd43b"}}>🔥 {habit.streak} day streak</span>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div className="pbar"><div className="pfill" style={{width:`${pct}%`,background:"linear-gradient(90deg, #81c784, #74c0fc)"}}/></div>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",minWidth:34,textAlign:"right"}}>{habit.done}/{habit.target}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </>
         ) : (
           <>
@@ -543,9 +619,26 @@ export default function App() {
                   </div>
                   <span style={{fontSize:12,color:item.done?"rgba(255,255,255,0.3)":"#ddd",textDecoration:item.done?"line-through":"none",lineHeight:1.5,flex:1}}>
                     {item.name}
+                    {item.dueDate && (
+                      <span style={{display:"inline-flex",marginLeft:8,fontSize:9,padding:"2px 6px",borderRadius:999,background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.08)"}}>
+                        Due {new Date(item.dueDate).toLocaleDateString()}
+                      </span>
+                    )}
                   </span>
                   {editMode && (
-                    <button className="del-x" onClick={e=>{e.stopPropagation();deleteItem(section.id,item.id);}}>✕</button>
+                    <div style={{display:"flex",alignItems:"center",gap:6}} onClick={e=>e.stopPropagation()}>
+                      <input
+                        type="date"
+                        value={item.dueDate || ""}
+                        onChange={(e) => {
+                          setTrackers((prev) => prev.map((trackerItem, trackerIndex) => trackerIndex === activeTracker ?
+                            { ...trackerItem, sections: trackerItem.sections.map((sec) => sec.id === section.id ?
+                              { ...sec, items: sec.items.map((entry) => entry.id === item.id ? { ...entry, dueDate: e.target.value } : entry) } : sec) } : trackerItem));
+                        }}
+                        style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:6,color:"#fff",padding:"4px 6px",fontSize:10,fontFamily:"inherit"}}
+                      />
+                      <button className="del-x" onClick={e=>{e.stopPropagation();deleteItem(section.id,item.id);}}>✕</button>
+                    </div>
                   )}
                 </div>
               ))}

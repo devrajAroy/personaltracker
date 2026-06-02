@@ -2,9 +2,11 @@ import { expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders the dashboard overview and notifications area', () => {
+test('renders the dashboard overview, notifications, countdown deadlines, and habit consistency area', () => {
   render(<App />);
 
   expect(screen.getByText(/dashboard overview/i)).toBeInTheDocument();
   expect(screen.getByText(/notifications/i)).toBeInTheDocument();
+  expect(screen.getByText(/countdown deadlines/i)).toBeInTheDocument();
+  expect(screen.getByText(/habit consistency/i)).toBeInTheDocument();
 });
