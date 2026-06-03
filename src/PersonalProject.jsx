@@ -18,9 +18,9 @@ const INITIAL_NOTIFICATIONS = [
 ];
 
 const INITIAL_HABITS = [
-  { id: 1, name: "Morning planning", done: 4, target: 5, streak: 9 },
-  { id: 2, name: "Hydration check", done: 3, target: 4, streak: 6 },
-  { id: 3, name: "Evening review", done: 2, target: 3, streak: 7 },
+  { id: 1, name: "Morning planning", done: 0, target: 7, streak: 0, days: [] },
+  { id: 2, name: "Hydration check", done: 0, target: 7, streak: 0, days: [] },
+  { id: 3, name: "Evening review", done: 0, target: 7, streak: 0, days: [] },
 ];
 
 const PALETTE = ["#e8c547","#4fc3f7","#81c784","#f06292","#ce93d8","#ffab76","#51cf66","#74c0fc","#ffd43b","#ff6b6b","#a78bfa","#34d399","#fb8c00","#26c6da"];
@@ -271,6 +271,41 @@ export default function App() {
     setHabits(p => p.map(h => h.id === habitId ? { ...h, done: Math.min(h.done + 1, h.target) } : h));
   };
 
+  const DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const getStreak = (days) => {
+    if (!days || days.length === 0) return 0;
+
+    const ordered = [...new Set(days)].sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b));
+    let current = 1;
+
+    for (let i = 1; i < ordered.length; i += 1) {
+      const prev = DAY_ORDER.indexOf(ordered[i - 1]);
+      const curr = DAY_ORDER.indexOf(ordered[i]);
+
+      if (curr !== prev + 1) {
+        current = 1;
+      } else {
+        current += 1;
+      }
+    }
+
+    return current;
+  };
+
+  const toggleHabitDay = (habitId, day) => {
+    setHabits((prev) =>
+      prev.map((habit) => {
+        if (habit.id !== habitId) return habit;
+        const days = habit.days || [];
+        const already = days.includes(day);
+        const nextDays = already ? days.filter((item) => item !== day) : [...days, day];
+        const nextDone = Math.min(7, nextDays.length);
+        return { ...habit, days: nextDays, done: nextDone, streak: getStreak(nextDays) };
+      })
+    );
+  };
+
   const upcomingDeadlines = trackers
     .flatMap((trackerItem) => trackerItem.sections.flatMap((section) =>
       section.items
@@ -285,7 +320,7 @@ export default function App() {
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
   const consistencyScore = habits.length
-    ? Math.round((habits.reduce((sum, h) => sum + (h.done / h.target), 0) / habits.length) * 100)
+    ? Math.round((habits.reduce((sum, h) => sum + (h.done / 7), 0) / habits.length) * 100)
     : 0;
 
   const overall = totalProg(tracker?.sections||[]);
@@ -515,18 +550,34 @@ export default function App() {
                     <span style={{fontSize:10,color:"#74c0fc"}}>{consistencyScore}%</span>
                   </div>
                   {habits.map(habit => {
-                    const pct = Math.min(100, Math.round((habit.done / habit.target) * 100));
+                    const pct = Math.min(100, Math.round((habit.done / 7) * 100));
+                    const days = DAY_ORDER;
                     return (
-                      <button key={habit.id} onClick={() => toggleHabit(habit.id)} style={{textAlign:"left",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px 10px",cursor:"pointer",color:"#f4f4f5"}}>
-                        <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:4}}>
+                      <div key={habit.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px 10px",color:"#f4f4f5"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:6}}>
                           <strong style={{fontSize:11}}>{habit.name}</strong>
                           <span style={{fontSize:9,color:"#ffd43b"}}>🔥 {habit.streak} day streak</span>
                         </div>
-                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                           <div className="pbar"><div className="pfill" style={{width:`${pct}%`,background:"linear-gradient(90deg, #81c784, #74c0fc)"}}/></div>
-                          <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",minWidth:34,textAlign:"right"}}>{habit.done}/{habit.target}</span>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",minWidth:34,textAlign:"right"}}>{habit.done}/7</span>
                         </div>
-                      </button>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          {days.map((day) => {
+                            const active = (habit.days || []).includes(day);
+                            return (
+                              <button
+                                key={`${habit.id}-${day}`}
+                                type="button"
+                                onClick={() => toggleHabitDay(habit.id, day)}
+                                style={{minWidth:32,padding:"6px 0",borderRadius:6,border:active ? "1px solid #81c784" : "1px solid rgba(255,255,255,0.08)",background:active ? "rgba(129,199,132,0.14)" : "rgba(255,255,255,0.04)",color:active ? "#b9f5bf" : "rgba(255,255,255,0.75)",cursor:"pointer",fontSize:10,fontFamily:"inherit"}}
+                              >
+                                {day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
