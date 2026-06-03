@@ -170,6 +170,8 @@ export default function App() {
   );
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [habits, setHabits] = useState(() => load(HABITS_KEY, INITIAL_HABITS));
+  const [habitDraft, setHabitDraft] = useState({ name: "", days: [] });
+  const [editingHabits, setEditingHabits] = useState(false);
 
   useEffect(() => { save(APP_KEY, trackers); }, [trackers]);
   useEffect(() => { save(NOTES_KEY, notes); }, [notes]);
@@ -304,6 +306,24 @@ export default function App() {
         return { ...habit, days: nextDays, done: nextDone, streak: getStreak(nextDays) };
       })
     );
+  };
+
+  const addHabit = () => {
+    const name = habitDraft.name.trim();
+    if (!name) return;
+    setHabits((prev) => [
+      ...prev,
+      { id: uid(), name, done: 0, target: 7, streak: 0, days: [] },
+    ]);
+    setHabitDraft({ name: "", days: [] });
+  };
+
+  const updateHabitName = (habitId, value) => {
+    setHabits((prev) => prev.map((habit) => habit.id === habitId ? { ...habit, name: value } : habit));
+  };
+
+  const removeHabit = (habitId) => {
+    setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
   };
 
   const upcomingDeadlines = trackers
@@ -547,20 +567,45 @@ export default function App() {
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:2}}>
                     <strong style={{fontSize:11,color:"#f4f4f5"}}>Weekly consistency</strong>
-                    <span style={{fontSize:10,color:"#74c0fc"}}>{consistencyScore}%</span>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:10,color:"#74c0fc"}}>{consistencyScore}%</span>
+                      <button onClick={() => setEditingHabits((prev) => !prev)} className="ctrl-btn" style={{padding:"6px 8px",fontSize:10}}>{editingHabits ? "Done" : "Edit"}</button>
+                    </div>
                   </div>
+                  {editingHabits && (
+                  <div style={{display:"flex",gap:8,marginBottom:8}}>
+                    <input
+                      value={habitDraft.name}
+                      onChange={(e) => setHabitDraft((prev) => ({ ...prev, name: e.target.value }))}
+                      placeholder="New goal name"
+                      style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:6,color:"#fff",padding:"7px 8px",fontFamily:"inherit",fontSize:11}}
+                    />
+                    <button onClick={addHabit} className="ctrl-btn" style={{padding:"7px 10px",fontSize:10}}>Add goal</button>
+                  </div>
+                  )}
                   {habits.map(habit => {
                     const pct = Math.min(100, Math.round((habit.done / 7) * 100));
                     const days = DAY_ORDER;
                     return (
                       <div key={habit.id} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"10px 10px",color:"#f4f4f5"}}>
                         <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:6}}>
-                          <strong style={{fontSize:11}}>{habit.name}</strong>
+                          {editingHabits ? (
+                            <input
+                              value={habit.name}
+                              onChange={(e) => updateHabitName(habit.id, e.target.value)}
+                              style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:6,color:"#fff",padding:"6px 7px",fontFamily:"inherit",fontSize:11}}
+                            />
+                          ) : (
+                            <strong style={{fontSize:11}}>{habit.name}</strong>
+                          )}
+                          {editingHabits && <button onClick={() => removeHabit(habit.id)} className="ctrl-btn danger" style={{padding:"6px 8px",fontSize:10}}>Remove</button>}
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",marginBottom:6}}>
                           <span style={{fontSize:9,color:"#ffd43b"}}>🔥 {habit.streak} day streak</span>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.55)"}}>{habit.done}/7</span>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
                           <div className="pbar"><div className="pfill" style={{width:`${pct}%`,background:"linear-gradient(90deg, #81c784, #74c0fc)"}}/></div>
-                          <span style={{fontSize:10,color:"rgba(255,255,255,0.55)",minWidth:34,textAlign:"right"}}>{habit.done}/7</span>
                         </div>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           {days.map((day) => {
