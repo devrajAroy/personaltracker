@@ -368,6 +368,14 @@ export default function App() {
     setIsRunning(false);
   };
 
+  const clearCompletedGoals = () => {
+    setCompletedGoals([]);
+  };
+
+  const removeCompletedGoal = (goalToRemove) => {
+    setCompletedGoals((prev) => prev.filter((goal) => goal !== goalToRemove));
+  };
+
   const addHabit = () => {
     const name = habitDraft.name.trim();
     if (!name) return;
@@ -669,38 +677,6 @@ export default function App() {
               </div>
 
               <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
-                <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Pomodoro timer</div>
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <input value={pomodoroGoal} onChange={(e) => setPomodoroGoal(e.target.value)} placeholder="Set a study goal" style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:6,color:"#fff",padding:"8px 9px",fontFamily:"inherit",fontSize:11}} />
-                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                    {[15, 25, 45].map((value) => (
-                      <button key={value} onClick={() => { setPomodoroMinutes(value); setTimeLeft(value * 60); setIsRunning(false); }} className={`ctrl-btn ${pomodoroMinutes === value ? "active-edit" : ""}`} style={{padding:"6px 8px",fontSize:10}}>{value} min</button>
-                    ))}
-                  </div>
-                  <div style={{fontSize:18,fontWeight:700,color:"#fff",textAlign:"center",letterSpacing:"0.08em"}}>{formatTime(timeLeft)}</div>
-                  <div style={{display:"flex",gap:8}}>
-                    {!isRunning && !isPaused ? (
-                      <button onClick={startPomodoro} className="ctrl-btn" style={{flex:1,padding:"8px 10px",fontSize:10,background:"rgba(129,199,132,0.14)",borderColor:"rgba(129,199,132,0.25)",color:"#b9f5bf"}}>Start timer</button>
-                    ) : null}
-                    {isRunning ? (
-                      <button onClick={pausePomodoro} className="ctrl-btn" style={{flex:1,padding:"8px 10px",fontSize:10,background:"rgba(255,255,255,0.08)",borderColor:"rgba(255,255,255,0.15)",color:"#fff"}}>Stop</button>
-                    ) : null}
-                    {isPaused ? (
-                      <button onClick={resumePomodoro} className="ctrl-btn" style={{flex:1,padding:"8px 10px",fontSize:10,background:"rgba(129,199,132,0.14)",borderColor:"rgba(129,199,132,0.25)",color:"#b9f5bf"}}>Resume</button>
-                    ) : null}
-                    <button onClick={resetPomodoro} className="ctrl-btn" style={{flex:1,padding:"8px 10px",fontSize:10}}>Reset</button>
-                  </div>
-                  <button onClick={confirmGoal} className="ctrl-btn" style={{padding:"8px 10px",fontSize:10,background:"rgba(116,192,252,0.14)",borderColor:"rgba(116,192,252,0.25)",color:"#dff3ff"}}>I completed this goal</button>
-                  <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Completed goals:</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {completedGoals.length === 0 ? <div style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>No completed goals yet.</div> : completedGoals.map((goal) => (
-                      <div key={goal} style={{textDecoration:"line-through",color:"rgba(255,255,255,0.45)",fontSize:10}}>{goal}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 14px"}}>
                 <div style={{fontSize:9,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.35)",marginBottom:8}}>Habit consistency</div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:2}}>
@@ -797,10 +773,16 @@ export default function App() {
                   <button onClick={resetPomodoro} className="ctrl-btn" style={{flex:1,padding:"8px 10px",fontSize:10}}>Reset</button>
                 </div>
                 <button onClick={confirmGoal} className="ctrl-btn" style={{padding:"8px 10px",fontSize:10,background:"rgba(116,192,252,0.14)",borderColor:"rgba(116,192,252,0.25)",color:"#dff3ff"}}>I completed this goal</button>
-                <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Completed goals:</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+                  <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Completed goals:</div>
+                  <button onClick={clearCompletedGoals} className="ctrl-btn danger" style={{padding:"6px 8px",fontSize:10}}>Clear list</button>
+                </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {completedGoals.length === 0 ? <div style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>No completed goals yet.</div> : completedGoals.map((goal) => (
-                    <div key={goal} style={{textDecoration:"line-through",color:"rgba(255,255,255,0.45)",fontSize:10}}>{goal}</div>
+                    <div key={goal} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,textDecoration:"line-through",color:"rgba(255,255,255,0.45)",fontSize:10}}>
+                      <span>{goal}</span>
+                      <button onClick={() => removeCompletedGoal(goal)} className="ctrl-btn danger" style={{padding:"4px 6px",fontSize:9}}>Remove</button>
+                    </div>
                   ))}
                 </div>
               </div>
